@@ -46,6 +46,11 @@ df2 regroupe nombre de tail sur nombre de lancer pour chaque personne et pièce
 #| warning: false
 #| error: false
 
+library(ggplot2)
+library(dplyr)
+library(stringr)
+set.seed(12345)
+
 df <- read.csv("data-agg.csv",header=T)
 n <- nrow(df)
 df1 <- df[,-c(2,4)] # heads to heads
@@ -67,17 +72,194 @@ head(df2)
 
 ### Global analysis
 
-### Analysis by person
-
-### Analysis by coin
-
 ```{r}
-#| label: "Simple glm"
+#| label: "Global analysis"
 #| echo: false
 #| message: false 
 #| warning: false
 #| error: false
 
+### Quick overview of data
+
+num_persons <- length(unique(df$person))
+num_coins <- length(unique(df$coin))
+
+cat("Number of persons:", num_persons, "\n")
+cat("Number of coins:", num_coins, "\n")
+
+### Histogram of proportions
+df$success <- df$y / df$m
+df_heads <- subset(df, start == "heads")
+df_tails <- subset(df, start == "tails")
+
+caption_p_general <- str_wrap("Figure 1: Histogram of the success proportions for head starting and tail starting.", width = 85)
+
+p_general <- ggplot(df, aes(x = success)) +
+  geom_histogram(bins = 60, fill = "steelblue", color = "white", alpha = 0.8) +
+  facet_wrap(~ start, ncol = 2) +
+  labs(
+    title = "Distribution of same-side proporitions",
+    x = "Same-side proportion",
+    y = "Count",
+    caption = caption_p_general,
+  ) +
+  theme_bw() + 
+  theme(
+    plot.title = element_text(hjust = 0.5),   
+    plot.caption = element_text(hjust = 0.5),      
+    legend.title = element_text(hjust = 0.5),   
+    legend.text = element_text(hjust = 0.5)     
+  )
+
+print(p_general)
+```
+
+### Analysis by person
+
+```{r}
+#| label: "Analysis by person"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+
+### (a) Summary of total flips and success by person
+person_summary <- df %>%
+  group_by(person) %>%
+  summarize(
+    total_flips = sum(m),
+    mean_success = round(mean(success, na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  arrange(mean_success)
+
+print(person_summary)
+
+
+### (b) Boxplot by person
+caption_p_person = str_wrap("Figure 2: Boxplot of the success proportions by person.", width = 85)
+
+p_person <- ggplot(person_summary, aes(x = "", y = mean_success)) +
+  geom_boxplot(
+    width = 0.1,
+    fill = "grey",
+    alpha = 0.7,
+    outlier.color = "red"
+  ) +
+  labs(
+    title   = "Distribution of Success Proportion across Persons",
+    x = "Person",
+    y       = "Success Proportion",
+    caption = caption_p_person
+  ) +
+  theme_bw() + 
+  theme(
+    plot.title = element_text(hjust = 0.5),   
+    plot.caption = element_text(hjust = 0.5),      
+    legend.title = element_text(hjust = 0.5),   
+    legend.text = element_text(hjust = 0.5)     
+  )
+
+print(p_person)
+```
+
+### Analysis by coin
+
+```{r}
+#| label: "Analysis by person"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+
+### (a) Summary of total flips and success by person
+coin_summary <- df %>%
+  group_by(coin) %>%
+  summarize(
+    total_flips = sum(m),
+    mean_success = round(mean(success, na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  arrange(mean_success)
+
+print(coin_summary)
+
+
+### (b) Boxplot by person
+caption_p_coin = str_wrap("Figure 2: Boxplot of the success proportions by coin.", width = 85)
+
+p_coin <- ggplot(coin_summary, aes(x = "", y = mean_success)) +
+  geom_boxplot(
+    width = 0.1,
+    fill = "grey",
+    alpha = 0.7,
+    outlier.color = "red"
+  ) +
+  labs(
+    title   = "Distribution of Success Proportion across Coins",
+    x = "Coin",
+    y       = "Success Proportion",
+    caption = caption_p_coin
+  ) +
+  theme_bw() + 
+  theme(
+    plot.title = element_text(hjust = 0.5),   
+    plot.caption = element_text(hjust = 0.5),      
+    legend.title = element_text(hjust = 0.5),   
+    legend.text = element_text(hjust = 0.5)     
+  )
+
+print(p_coin)
+```
+
+### Analysis by combination person-coin
+
+```{r}
+#| label: "Analysis by person-coin"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+person_coin_summary <- df %>%
+  group_by(person, coin) %>%
+  summarize(
+    total_flips = sum(m),
+    mean_success = round(mean(success, na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  arrange(mean_success)  
+
+print(person_coin_summary)
+
+
+### (b) Boxplot by person
+caption_p_person_coin = str_wrap("Figure 2: Boxplot of the success proportions by coin.", width = 85)
+
+p_person_coin <- ggplot(person_coin_summary, aes(x = "", y = mean_success)) +
+  geom_boxplot(
+    width = 0.1,
+    fill = "grey",
+    alpha = 0.7,
+    outlier.color = "red"
+  ) +
+  labs(
+    title   = "Distribution of Success Proportion across Coins",
+    x = "Coin",
+    y       = "Success Proportion",
+    caption = caption_p_person_coin
+  ) +
+  theme_bw() + 
+  theme(
+    plot.title = element_text(hjust = 0.5),   
+    plot.caption = element_text(hjust = 0.5),      
+    legend.title = element_text(hjust = 0.5),   
+    legend.text = element_text(hjust = 0.5)     
+  )
+
+print(p_person_coin)
 ```
 
 The `echo: false` option disables the printing of code (only output is displayed).
