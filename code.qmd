@@ -236,7 +236,7 @@ print(person_coin_summary)
 
 
 ### (b) Boxplot by person
-caption_p_person_coin = str_wrap("Figure 2: Boxplot of the success proportions by coin.", width = 85)
+caption_p_person_coin = str_wrap("Figure 2: Boxplot of the success proportions by coin and person.", width = 85)
 
 p_person_coin <- ggplot(person_coin_summary, aes(x = "", y = mean_success)) +
   geom_boxplot(
@@ -246,8 +246,8 @@ p_person_coin <- ggplot(person_coin_summary, aes(x = "", y = mean_success)) +
     outlier.color = "red"
   ) +
   labs(
-    title   = "Distribution of Success Proportion across Coins",
-    x = "Coin",
+    title   = "Distribution of Success Proportion across Coins-Persons",
+    x = "Coin-Person",
     y       = "Success Proportion",
     caption = caption_p_person_coin
   ) +
