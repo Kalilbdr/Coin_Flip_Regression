@@ -1,0 +1,83 @@
+---
+title: "Regression Methods Project"
+format: html
+editor: visual
+---
+
+## Introduction
+
+1.  fr
+2.  frf
+3.  rf
+4.  f
+5.  f
+6.  f
+7.  f
+8.  f
+
+## Read the data
+
+Here we explore the data:
+
+The columns of data_agg are:
+
+-   head_head = nbr de fois où la pièce a commencé head et est retombé head
+
+-   tail_head = nbr de fois où la pièce a commencé tail et est retombé head
+
+-   N_start_heads_up = nbr de lancers avec le head en start
+
+-   N_start_tails_up = nbr de lancers avec le tail en start
+
+-   person = personne ayant lancé la pièce
+
+-   coin = type de coin lancée
+
+Après transformation, on a df qui est deux fois plus long et sépare les head head et les tails-tails de data_agg puis coin et personne sont maintenant des variables catégorielles.
+
+df1 regroupe nombre de head sur nombre de lancer pour chaque personne et piece
+
+df2 regroupe nombre de tail sur nombre de lancer pour chaque personne et pièce
+
+```{r}
+#| label: "Read the data"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+df <- read.csv("data-agg.csv",header=T)
+n <- nrow(df)
+df1 <- df[,-c(2,4)] # heads to heads
+df2 <- df[,-c(1,3)] # tails to heads
+df2[,1] <- df2[,2]-df2[,1] # tails to tails 
+names(df1) <- names(df2) <- c("y","m","person","coin") 
+start <- rep(c("heads","tails"),c(n,n))
+df <- rbind(df1,df2)
+df$person <- factor(df$person) 
+df$coin <- factor(df$coin)
+df$start <- factor(start) 
+
+head(df)
+head(df1)
+head(df2)
+```
+
+## Exploratory Analysis
+
+### Global analysis
+
+### Analysis by person
+
+### Analysis by coin
+
+```{r}
+#| label: "Simple glm"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
