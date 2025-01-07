@@ -68,7 +68,7 @@ head(df1)
 head(df2)
 ```
 
-## Exploratory Analysis
+## Exploratory Data Analysis
 
 ### Global analysis
 
@@ -363,4 +363,74 @@ cor_result <- cor(df_time$agg, df_time$mean_same_side, use = "complete.obs")
 print(cor_result)
 
 acf(df_time$mean_same_side, main="Autocorrélation de mean_same_side")
+```
+
+## GLM Binomial
+
+```{r}
+#| label: "GLM Binomial"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+# Ajustement du modèle GLM binomial simple
+base_glm <- glm(cbind(y, m - y) ~ 1, family = binomial, data = df)
+
+# Résumé du modèle pour voir les résultats
+summary(base_glm)
+
+
+
+
+# Calcul du facteur de dispersion
+dispersion_ratio <- summary(base_glm)$deviance / summary(base_glm)$df.residual
+cat("Dispersion Ratio:", dispersion_ratio, "\n")
+
+# Préparation des données pour le plot des résidus
+df_resid <- data.frame(
+  fitted = fitted(base_glm),
+  pearson_res = residuals(base_glm, type = "pearson")
+)
+
+caption_resid <- str_wrap("Figure X: Résidus Pearson vs. Valeurs Prévues du modèle GLM Binomial simple.", width = 85)
+
+p_residuals <- ggplot(df_resid, aes(x = fitted, y = pearson_res)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    title = "Résidus vs Valeurs Prévues",
+    x = "Valeurs Prévues",
+    y = "Résidus Pearson",
+    caption = caption_resid
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    plot.caption = element_text(hjust = 0.5)
+  )
+
+print(p_residuals)
+
+
+df_resid$pearson_res <- residuals(base_glm, type = "pearson")
+
+caption_qq <- str_wrap("Figure Y: Q-Q Plot des Résidus Pearson du modèle GLM Binomial simple.", width = 85)
+
+p_qq <- ggplot(df_resid, aes(sample = pearson_res)) +
+  stat_qq(color = "steelblue", alpha = 0.7) +
+  stat_qq_line(color = "red", linetype = "dashed") +
+  labs(
+    title = "Q-Q Plot des Résidus Pearson",
+    x = "Quantiles théoriques",
+    y = "Quantiles des résidus",
+    caption = caption_qq
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    plot.caption = element_text(hjust = 0.5)
+  )
+
+print(p_qq)
 ```
