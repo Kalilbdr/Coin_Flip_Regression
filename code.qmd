@@ -49,6 +49,7 @@ df2 regroupe nombre de tail sur nombre de lancer pour chaque personne et pièce
 library(ggplot2)
 library(dplyr)
 library(stringr)
+library(SMPracticals)
 set.seed(12345)
 
 df <- read.csv("data-agg.csv",header=T)
@@ -260,7 +261,7 @@ person_coin_summary <- df %>%
 print(person_coin_summary)
 
 
-### (b) Boxplot by person
+### (b) Boxplot by person-coin
 caption_p_person_coin = str_wrap("Figure 4: Boxplot of the success proportions by coin and person.", width = 85)
 
 p_person_coin <- ggplot(person_coin_summary, aes(x = "", y = mean_success)) +
@@ -380,7 +381,9 @@ base_glm <- glm(cbind(y, m - y) ~ 1, family = binomial, data = df)
 # Résumé du modèle pour voir les résultats
 summary(base_glm)
 
-
+base_coef <- coef(base_glm)
+p_initial <- exp(base_coef) / (1 + exp(base_coef))
+cat("Estimated same-side probability (initial model):", round(p_initial, 4), "\n")
 
 
 # Calcul du facteur de dispersion
@@ -433,4 +436,98 @@ p_qq <- ggplot(df_resid, aes(sample = pearson_res)) +
   )
 
 print(p_qq)
+
+
+# Calculer les quartiles et IQR
+Q1 <- quantile(person_coin_summary$mean_success, 0.25)
+Q3 <- quantile(person_coin_summary$mean_success, 0.75)
+IQR_value <- Q3 - Q1
+
+# Définir les seuils pour outliers
+lower_bound <- Q1 - 1.5 * IQR_value
+upper_bound <- Q3 + 1.5 * IQR_value
+
+# Filtrer les observations considérées comme outliers
+outliers_pc <- person_coin_summary %>%
+  filter(mean_success < lower_bound | mean_success > upper_bound)
+
+print(outliers_pc)
+
+# Calculer les distances de Cook pour toutes les observations
+cooks_d <- cooks.distance(base_glm)
+
+# Ajouter la distance de Cook aux données d'origine
+df_with_cook <- df
+df_with_cook$cooks_distance <- cooks_d
+
+# Extraire les combinaisons person-coin des outliers
+outlier_groups <- outliers_pc %>% select(person, coin)
+
+# Filtrer les données originales pour les observations appartenant à ces groupes
+df_outliers <- df_with_cook %>%
+  inner_join(outlier_groups, by = c("person", "coin"))
+
+# Examiner les distances de Cook pour ces observations
+df_outliers_selected <- df_outliers %>% select(person, coin, y, m, cooks_distance)
+
+print(df_outliers_selected)
+
+n <- nrow(df)
+
+print(threshold <- 8/(n - 2*1))
+# 0.01904 donc certain depasse ce seuil. Refit sans ces valeurs pour verifier si le resultat reste le meme 
+
+# Identifier les indices des observations avec une distance de Cook > seuil
+influential_indices <- which(cooks_d > threshold)
+
+# Supprimer ces observations du jeu de données original
+df_cleaned <- df[-influential_indices, ]
+
+# Ajuster un nouveau modèle GLM binomial simple sur les données nettoyées
+refit_glm <- glm(cbind(y, m - y) ~ 1, family = binomial, data = df_cleaned)
+
+# Afficher le résumé du nouveau modèle
+summary(refit_glm)
+
+refit_coef <- coef(refit_glm)
+p_refit <- exp(refit_coef) / (1 + exp(refit_coef))
+cat("Estimated same-side probability (model without influential points):", round(p_refit, 4), "\n")
+
+```
+
+```{r}
+#| label: "Normal linear model"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+# Création de la variable proportionnelle success
+df$prop <- df$y / df$m
+
+# Ajustement d'un modèle linéaire pondéré avec intercept seulement
+# Poids = m (les constantes multiplicatives n'affectent pas les estimations)
+wls_model <- lm(prop ~ 1, data = df, weights = df$m)
+
+# Résumé du modèle WLS
+summary(wls_model)
+
+# Calcul de la probabilité estimée depuis le modèle WLS
+p_wls <- coef(wls_model)[1]
+cat("Estimated same-side probability using WLS:", round(p_wls, 4), "\n")
+
+# Ajuster un modèle gaussian avec poids pour reproduire WLS
+glm_model_wls <- glm(prop ~ 1, family = gaussian, weights = m, data = df)
+summary(glm_model_wls)
+```
+
+```{r}
+#| label: "Normal linear model 2"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+
+
 ```
