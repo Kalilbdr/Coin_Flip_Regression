@@ -287,6 +287,8 @@ p_person_coin <- ggplot(person_coin_summary, aes(x = "", y = mean_success)) +
 print(p_person_coin)
 ```
 
+### Summary of analysis person-coin
+
 ```{r}
 #| label: "Violin Plot"
 #| echo: false
@@ -327,10 +329,38 @@ p_violin <- ggplot(violin_data, aes(x = "", y = mean_success)) +
     plot.caption = element_text(hjust = 0.5),
     legend.title = element_text(hjust = 0.5),   
     legend.text = element_text(hjust = 0.5),
-    strip.background = element_rect(fill = "grey90"),  # Optionnel : modifier l'apparence des facettes
+    strip.background = element_rect(fill = "grey90"),
     strip.text = element_text(face = "bold")
   )
 
 print(p_violin)
 
+```
+
+### Temporal effects
+
+pas très concluant
+
+```{r}
+#| label: "Temporal analysis"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+
+df_time <- read.csv("df-time-agg.csv", header = TRUE)
+df_time <- df_time[, c("same_side", "agg")]
+df_time <- df_time %>%
+  group_by(agg) %>%
+  summarize(mean_same_side = mean(same_side, na.rm = TRUE)) %>%
+  ungroup()
+
+acf_result <- acf(df_time$mean_same_side, plot = FALSE)
+print(acf_result)
+
+cor_result <- cor(df_time$agg, df_time$mean_same_side, use = "complete.obs")
+print(cor_result)
+
+acf(df_time$mean_same_side, main="Autocorrélation de mean_same_side")
 ```
