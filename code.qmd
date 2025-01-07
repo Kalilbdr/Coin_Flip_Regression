@@ -520,14 +520,3 @@ cat("Estimated same-side probability using WLS:", round(p_wls, 4), "\n")
 glm_model_wls <- glm(prop ~ 1, family = gaussian, weights = m, data = df)
 summary(glm_model_wls)
 ```
-
-```{r}
-#| label: "Normal linear model 2"
-#| echo: false
-#| message: false 
-#| warning: false
-#| error: false
-
-
-
-```
