@@ -79,8 +79,8 @@ head(df2)
 #| warning: false
 #| error: false
 
-### Quick overview of data
 
+### Quick overview of the data
 num_persons <- length(unique(df$person))
 num_coins <- length(unique(df$coin))
 
@@ -98,10 +98,10 @@ p_general <- ggplot(df, aes(x = success)) +
   geom_histogram(bins = 60, fill = "steelblue", color = "white", alpha = 0.8) +
   facet_wrap(~ start, ncol = 2) +
   labs(
-    title = "Distribution of same-side proporitions",
+    title = "Distribution of same-side proportions",
     x = "Same-side proportion",
     y = "Count",
-    caption = caption_p_general,
+    caption = caption_p_general
   ) +
   theme_bw() + 
   theme(
@@ -111,7 +111,32 @@ p_general <- ggplot(df, aes(x = success)) +
     legend.text = element_text(hjust = 0.5)     
   )
 
-print(p_general)
+# Calcul des statistiques par groupe 'start'
+stats <- df %>%
+  group_by(start) %>%
+  summarize(
+    mu = mean(success, na.rm = TRUE),
+    sigma = sd(success, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+p_general + 
+  geom_text(
+    data = stats,
+    aes(
+      x = 0.68, 
+      y = Inf, 
+      label = paste0(
+        "atop(hat(mu) == ", round(mu, 3), 
+        ", hat(sigma) == ", round(sigma, 3), ")"
+      )
+    ),
+    parse = TRUE,
+    hjust = 1.1, vjust = 1.1, 
+    size = 3,
+    color = "black",
+    inherit.aes = FALSE
+  )
 ```
 
 ### Analysis by person
@@ -188,7 +213,7 @@ print(coin_summary)
 
 
 ### (b) Boxplot by person
-caption_p_coin = str_wrap("Figure 2: Boxplot of the success proportions by coin.", width = 85)
+caption_p_coin = str_wrap("Figure 3: Boxplot of the success proportions by coin.", width = 85)
 
 p_coin <- ggplot(coin_summary, aes(x = "", y = mean_success)) +
   geom_boxplot(
@@ -236,7 +261,7 @@ print(person_coin_summary)
 
 
 ### (b) Boxplot by person
-caption_p_person_coin = str_wrap("Figure 2: Boxplot of the success proportions by coin and person.", width = 85)
+caption_p_person_coin = str_wrap("Figure 4: Boxplot of the success proportions by coin and person.", width = 85)
 
 p_person_coin <- ggplot(person_coin_summary, aes(x = "", y = mean_success)) +
   geom_boxplot(
@@ -262,4 +287,50 @@ p_person_coin <- ggplot(person_coin_summary, aes(x = "", y = mean_success)) +
 print(p_person_coin)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r}
+#| label: "Violin Plot"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+
+violin_data <- data.frame(
+  category = factor(c(rep("person", nrow(person_summary)),
+                      rep("coin", nrow(coin_summary)),
+                      rep("person_coin", nrow(person_coin_summary)))),
+  mean_success = c(person_summary$mean_success,
+                   coin_summary$mean_success,
+                   person_coin_summary$mean_success)
+)
+
+# Définition de la légende
+caption_violin <- str_wrap(
+  "Figure 5: Violin plots with boxplots of the distribution of success proportions for persons, coins, and person-coin combinations.",
+  width = 85
+)
+
+# Création du graphique à violon avec boxplot superposé et facettes
+p_violin <- ggplot(violin_data, aes(x = "", y = mean_success)) +
+  geom_violin(fill = "steelblue", color = "white", alpha = 0.8) +
+  geom_boxplot(width = 0.1, fill = "lightgrey", color = "black", outlier.color = "red") +
+  facet_wrap(~ category) +
+  labs(
+    title = "Distribution of Success Proportions",
+    x = "",
+    y = "Success Proportion",
+    caption = caption_violin
+  ) +
+  theme_bw() + 
+  theme(
+    plot.title = element_text(hjust = 0.5),   
+    plot.caption = element_text(hjust = 0.5),
+    legend.title = element_text(hjust = 0.5),   
+    legend.text = element_text(hjust = 0.5),
+    strip.background = element_rect(fill = "grey90"),  # Optionnel : modifier l'apparence des facettes
+    strip.text = element_text(face = "bold")
+  )
+
+print(p_violin)
+
+```
