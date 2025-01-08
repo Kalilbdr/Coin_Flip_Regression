@@ -557,6 +557,68 @@ summary(glm_model_wls)
 #| warning: false
 #| error: false
 
+# Définition des formules pour les différents modèles candidats
+formulas <- list(
+  "start + person + coin" = cbind(y, m - y) ~ start + person + coin,
+  "start + person"       = cbind(y, m - y) ~ start + person,
+  "start + coin"         = cbind(y, m - y) ~ start + coin,
+  "person + coin"        = cbind(y, m - y) ~ person + coin,
+  "start"                = cbind(y, m - y) ~ start,
+  "person"               = cbind(y, m - y) ~ person,
+  "coin"                 = cbind(y, m - y) ~ coin,
+  "intercept"            = cbind(y, m - y) ~ 1
+)
 
+# Initialisation de listes pour stocker les modèles et leurs AIC
+model_list <- list()
+aic_values <- numeric(length(formulas))
+
+# Ajustement de chaque modèle et calcul de son AIC
+for(i in seq_along(formulas)){
+  formula_i <- formulas[[i]]
+  model_list[[i]] <- glm(formula_i, family = binomial, data = df)
+  aic_values[i] <- AIC(model_list[[i]])
+}
+
+# Création d'une table récapitulative des modèles et leurs AIC
+model_comparison <- data.frame(
+  Model = names(formulas),
+  AIC = aic_values
+)
+
+# Tri du tableau par AIC croissant
+model_comparison <- model_comparison[order(model_comparison$AIC), ]
+print(model_comparison)
+
+# Identification du meilleur modèle selon l'AIC
+best_model_index <- which.min(aic_values)
+best_model_name <- model_comparison$Model[1]
+best_model <- model_list[[best_model_index]]
+
+cat("Meilleur modèle selon l'AIC :", best_model_name, "\n")
+summary(best_model)
+
+# Supposons que le meilleur modèle est celui avec effet "person" uniquement
+best_model <- glm(cbind(y, m - y) ~ person, family = binomial, data = df)
+summary(best_model)
+
+# Calculer les résidus Pearson pour le modèle optimal
+residuals_best <- residuals(best_model, type = "pearson")
+fitted_best <- fitted(best_model)
+
+# Préparer un data frame pour la visualisation des résidus
+df_resid_best <- data.frame(fitted = fitted_best, pearson_res = residuals_best)
+
+# Plot des résidus vs valeurs prédites
+ggplot(df_resid_best, aes(x = fitted, y = pearson_res)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Résidus vs Valeurs Prévues (Modèle Optimal)",
+       x = "Valeurs Prévues", y = "Résidus Pearson") +
+  theme_bw()
+
+# Calcul du facteur de dispersion
+dispersion_ratio <- summary(best_model)$deviance / summary(best_model)$df.residual
+cat("Dispersion Ratio:", dispersion_ratio, "\n")
 
 ```
