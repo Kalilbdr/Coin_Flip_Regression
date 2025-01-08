@@ -51,6 +51,7 @@ library(dplyr)
 library(stringr)
 library(SMPracticals)
 set.seed(12345)
+path = "/Users/kalilbouhadra/MS_Statistics/MS1/Regression_Methods/Project/Regression_Project"
 
 df <- read.csv("data-agg.csv",header=T)
 n <- nrow(df)
@@ -93,8 +94,6 @@ df$success <- df$y / df$m
 df_heads <- subset(df, start == "heads")
 df_tails <- subset(df, start == "tails")
 
-caption_p_general <- str_wrap("Figure 1: Histogram of the success proportions for head starting and tail starting.", width = 85)
-
 p_general <- ggplot(df, aes(x = success)) +
   geom_histogram(bins = 60, fill = "steelblue", color = "white", alpha = 0.8) +
   facet_wrap(~ start, ncol = 2) +
@@ -102,7 +101,6 @@ p_general <- ggplot(df, aes(x = success)) +
     title = "Distribution of same-side proportions",
     x = "Same-side proportion",
     y = "Count",
-    caption = caption_p_general
   ) +
   theme_bw() + 
   theme(
@@ -121,7 +119,7 @@ stats <- df %>%
     .groups = "drop"
   )
 
-p_general + 
+p_general <- p_general + 
   geom_text(
     data = stats,
     aes(
@@ -138,6 +136,17 @@ p_general +
     color = "black",
     inherit.aes = FALSE
   )
+
+print(p_general)
+
+ggsave(
+  filename = "distribution_success.pdf",  
+  plot = p_general,  
+  device = "pdf", 
+  path = path, 
+  width = 8,
+  height = 5
+)
 ```
 
 ### Analysis by person
@@ -164,8 +173,6 @@ print(person_summary)
 
 
 ### (b) Boxplot by person
-caption_p_person = str_wrap("Figure 2: Boxplot of the success proportions by person.", width = 85)
-
 p_person <- ggplot(person_summary, aes(x = "", y = mean_success)) +
   geom_boxplot(
     width = 0.1,
@@ -177,7 +184,6 @@ p_person <- ggplot(person_summary, aes(x = "", y = mean_success)) +
     title   = "Distribution of Success Proportion across Persons",
     x = "Person",
     y       = "Success Proportion",
-    caption = caption_p_person
   ) +
   theme_bw() + 
   theme(
@@ -214,8 +220,6 @@ print(coin_summary)
 
 
 ### (b) Boxplot by person
-caption_p_coin = str_wrap("Figure 3: Boxplot of the success proportions by coin.", width = 85)
-
 p_coin <- ggplot(coin_summary, aes(x = "", y = mean_success)) +
   geom_boxplot(
     width = 0.1,
@@ -227,7 +231,6 @@ p_coin <- ggplot(coin_summary, aes(x = "", y = mean_success)) +
     title   = "Distribution of Success Proportion across Coins",
     x = "Coin",
     y       = "Success Proportion",
-    caption = caption_p_coin
   ) +
   theme_bw() + 
   theme(
@@ -299,19 +302,14 @@ print(p_person_coin)
 
 
 violin_data <- data.frame(
-  category = factor(c(rep("person", nrow(person_summary)),
-                      rep("coin", nrow(coin_summary)),
-                      rep("person_coin", nrow(person_coin_summary)))),
+  category = factor(c(rep("by person", nrow(person_summary)),
+                      rep("by coin", nrow(coin_summary)),
+                      rep("by person x coin", nrow(person_coin_summary)))),
   mean_success = c(person_summary$mean_success,
                    coin_summary$mean_success,
                    person_coin_summary$mean_success)
 )
 
-# Définition de la légende
-caption_violin <- str_wrap(
-  "Figure 5: Violin plots with boxplots of the distribution of success proportions for persons, coins, and person-coin combinations.",
-  width = 85
-)
 
 # Création du graphique à violon avec boxplot superposé et facettes
 p_violin <- ggplot(violin_data, aes(x = "", y = mean_success)) +
@@ -322,7 +320,6 @@ p_violin <- ggplot(violin_data, aes(x = "", y = mean_success)) +
     title = "Distribution of Success Proportions",
     x = "",
     y = "Success Proportion",
-    caption = caption_violin
   ) +
   theme_bw() + 
   theme(
@@ -335,6 +332,15 @@ p_violin <- ggplot(violin_data, aes(x = "", y = mean_success)) +
   )
 
 print(p_violin)
+
+ggsave(
+  filename = "violin_plot_success.pdf",  
+  plot = p_violin,  
+  device = "pdf", 
+  path = path, 
+  width = 8,
+  height = 5
+)
 
 ```
 
@@ -350,26 +356,49 @@ pas très concluant
 #| error: false
 
 
-df_time <- read.csv("df-time-agg.csv", header = TRUE)
-df_time <- df_time[, c("same_side", "agg")]
-df_time <- df_time %>%
-  group_by(agg) %>%
-  summarize(mean_same_side = mean(same_side, na.rm = TRUE)) %>%
-  ungroup()
-
+# Transformer les résultats de l'ACF en DataFrame
 acf_result <- acf(df_time$mean_same_side, plot = FALSE)
-print(acf_result)
+acf_df <- data.frame(
+  lag = acf_result$lag,
+  acf = acf_result$acf
+)
 
-cor_result <- cor(df_time$agg, df_time$mean_same_side, use = "complete.obs")
-print(cor_result)
+# Plot de l'ACF en ggplot
+p_acf <- ggplot(acf_df, aes(x = lag, y = acf)) +
+  geom_bar(stat = "identity", fill = "steelblue", color = "white", alpha = 0.8) +  # Barres d'autocorrélation
+  geom_hline(yintercept = 0, color = "black") +  # Ligne de référence à 0
+  geom_hline(yintercept = c(-1.96 / sqrt(nrow(df_time)), 1.96 / sqrt(nrow(df_time))), linetype = "dashed", color = "red") +  # Bornes de significativité
+  labs(
+    title = "Autocorrelation Function (ACF) of the success proportion",
+    x = "Lag",
+    y = "ACF"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.title = element_text(hjust = 0.5),
+    legend.text = element_text(hjust = 0.5),
+    strip.background = element_rect(fill = "grey90"),
+    strip.text = element_text(face = "bold")
+  )
 
-acf(df_time$mean_same_side, main="Autocorrélation de mean_same_side")
+# Affichage du plot
+print(p_acf)
+
+ggsave(
+  filename = "acf_success.pdf",  
+  plot = p_acf,  
+  device = "pdf", 
+  path = path, 
+  width = 8,
+  height = 5
+)
 ```
 
 ## GLM Binomial
 
 ```{r}
-#| label: "GLM Binomial"
+#| label: "GLM Binomial base"
 #| echo: false
 #| message: false 
 #| warning: false
@@ -496,7 +525,7 @@ cat("Estimated same-side probability (model without influential points):", round
 ```
 
 ```{r}
-#| label: "Normal linear model"
+#| label: "Normal linear model base"
 #| echo: false
 #| message: false 
 #| warning: false
@@ -519,4 +548,15 @@ cat("Estimated same-side probability using WLS:", round(p_wls, 4), "\n")
 # Ajuster un modèle gaussian avec poids pour reproduire WLS
 glm_model_wls <- glm(prop ~ 1, family = gaussian, weights = m, data = df)
 summary(glm_model_wls)
+```
+
+```{r}
+#| label: "GLM Binomial"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+
+
 ```
