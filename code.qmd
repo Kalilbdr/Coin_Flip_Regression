@@ -70,9 +70,9 @@ head(df1)
 head(df2)
 ```
 
-## Exploratory Data Analysis
+## 1. Exploratory Data Analysis
 
-### Global analysis
+### 1.1. Empirical distribution
 
 ```{r}
 #| label: "Global analysis"
@@ -110,7 +110,7 @@ p_general <- ggplot(df, aes(x = success)) +
     legend.text = element_text(hjust = 0.5)     
   )
 
-# Calcul des statistiques par groupe 'start'
+# Compute statistics
 stats <- df %>%
   group_by(start) %>%
   summarize(
@@ -149,10 +149,10 @@ ggsave(
 )
 ```
 
-### Analysis by person
+### 1.2. Outlier Analysis
 
 ```{r}
-#| label: "Analysis by person"
+#| label: "Outliers Analysis"
 #| echo: false
 #| message: false 
 #| warning: false
@@ -172,41 +172,7 @@ person_summary <- df %>%
 print(person_summary)
 
 
-### (b) Boxplot by person
-p_person <- ggplot(person_summary, aes(x = "", y = mean_success)) +
-  geom_boxplot(
-    width = 0.1,
-    fill = "grey",
-    alpha = 0.7,
-    outlier.color = "red"
-  ) +
-  labs(
-    title   = "Distribution of Success Proportion across Persons",
-    x = "Person",
-    y       = "Success Proportion",
-  ) +
-  theme_bw() + 
-  theme(
-    plot.title = element_text(hjust = 0.5),   
-    plot.caption = element_text(hjust = 0.5),      
-    legend.title = element_text(hjust = 0.5),   
-    legend.text = element_text(hjust = 0.5)     
-  )
-
-print(p_person)
-```
-
-### Analysis by coin
-
-```{r}
-#| label: "Analysis by person"
-#| echo: false
-#| message: false 
-#| warning: false
-#| error: false
-
-
-### (a) Summary of total flips and success by person
+### (b) Summary of total flips and success by coin
 coin_summary <- df %>%
   group_by(coin) %>%
   summarize(
@@ -219,38 +185,7 @@ coin_summary <- df %>%
 print(coin_summary)
 
 
-### (b) Boxplot by person
-p_coin <- ggplot(coin_summary, aes(x = "", y = mean_success)) +
-  geom_boxplot(
-    width = 0.1,
-    fill = "grey",
-    alpha = 0.7,
-    outlier.color = "red"
-  ) +
-  labs(
-    title   = "Distribution of Success Proportion across Coins",
-    x = "Coin",
-    y       = "Success Proportion",
-  ) +
-  theme_bw() + 
-  theme(
-    plot.title = element_text(hjust = 0.5),   
-    plot.caption = element_text(hjust = 0.5),      
-    legend.title = element_text(hjust = 0.5),   
-    legend.text = element_text(hjust = 0.5)     
-  )
-
-print(p_coin)
-```
-
-### Analysis by combination person-coin
-
-```{r}
-#| label: "Analysis by person-coin"
-#| echo: false
-#| message: false 
-#| warning: false
-#| error: false
+### (c) Summary of total flips and success by person-coin
 
 person_coin_summary <- df %>%
   group_by(person, coin) %>%
@@ -264,43 +199,7 @@ person_coin_summary <- df %>%
 print(person_coin_summary)
 
 
-### (b) Boxplot by person-coin
-caption_p_person_coin = str_wrap("Figure 4: Boxplot of the success proportions by coin and person.", width = 85)
-
-p_person_coin <- ggplot(person_coin_summary, aes(x = "", y = mean_success)) +
-  geom_boxplot(
-    width = 0.1,
-    fill = "grey",
-    alpha = 0.7,
-    outlier.color = "red"
-  ) +
-  labs(
-    title   = "Distribution of Success Proportion across Coins-Persons",
-    x = "Coin-Person",
-    y       = "Success Proportion",
-    caption = caption_p_person_coin
-  ) +
-  theme_bw() + 
-  theme(
-    plot.title = element_text(hjust = 0.5),   
-    plot.caption = element_text(hjust = 0.5),      
-    legend.title = element_text(hjust = 0.5),   
-    legend.text = element_text(hjust = 0.5)     
-  )
-
-print(p_person_coin)
-```
-
-### Summary of analysis person-coin
-
-```{r}
-#| label: "Violin Plot"
-#| echo: false
-#| message: false 
-#| warning: false
-#| error: false
-
-
+# Group the data
 violin_data <- data.frame(
   category = factor(c(rep("by person", nrow(person_summary)),
                       rep("by coin", nrow(coin_summary)),
@@ -310,8 +209,7 @@ violin_data <- data.frame(
                    person_coin_summary$mean_success)
 )
 
-
-# Création du graphique à violon avec boxplot superposé et facettes
+# Plot
 p_violin <- ggplot(violin_data, aes(x = "", y = mean_success)) +
   geom_violin(fill = "steelblue", color = "white", alpha = 0.8) +
   geom_boxplot(width = 0.1, fill = "lightgrey", color = "black", outlier.color = "red") +
@@ -341,12 +239,9 @@ ggsave(
   width = 8,
   height = 5
 )
-
 ```
 
-### Temporal effects
-
-pas très concluant
+### 1.3. Temporal effects
 
 ```{r}
 #| label: "Temporal analysis"
@@ -395,7 +290,9 @@ ggsave(
 )
 ```
 
-## GLM Binomial
+## 2. GLM Binomial
+
+### 2.1. Base model
 
 ```{r}
 #| label: "GLM Binomial base"
@@ -409,6 +306,14 @@ base_glm <- glm(cbind(y, m - y) ~ 1, family = binomial, data = df)
 
 # Résumé du modèle pour voir les résultats
 summary(base_glm)
+
+(ci_logit_base <- confint(base_glm, level = 0.95))
+
+# Transformation logit^-1 pour obtenir un IC sur p
+ic_p_base <- exp(ci_logit_base) / (1 + exp(ci_logit_base))
+cat("\n95% CI for p (base_glm): [",
+    round(ic_p_base[1], 4), ", ",
+    round(ic_p_base[2], 4), "]\n\n")
 
 base_coef <- coef(base_glm)
 p_initial <- exp(base_coef) / (1 + exp(base_coef))
@@ -518,11 +423,19 @@ refit_glm <- glm(cbind(y, m - y) ~ 1, family = binomial, data = df_cleaned)
 # Afficher le résumé du nouveau modèle
 summary(refit_glm)
 
+(ci_logit_refit <- confint(refit_glm, level = 0.95))
+ic_p_refit <- exp(ci_logit_refit) / (1 + exp(ci_logit_refit))
+cat("\n95% CI for p (refit_glm): [",
+    round(ic_p_refit[1], 4), ", ",
+    round(ic_p_refit[2], 4), "]\n\n")
+
 refit_coef <- coef(refit_glm)
 p_refit <- exp(refit_coef) / (1 + exp(refit_coef))
 cat("Estimated same-side probability (model without influential points):", round(p_refit, 4), "\n")
 
 ```
+
+### 2.2. Normal model
 
 ```{r}
 #| label: "Normal linear model base"
@@ -541,6 +454,11 @@ wls_model <- lm(prop ~ 1, data = df, weights = df$m)
 # Résumé du modèle WLS
 summary(wls_model)
 
+(confint_wls <- confint(wls_model, level = 0.95))
+cat("\n95% CI for the mean proportion (WLS): [",
+    round(confint_wls[1,1], 4), ", ",
+    round(confint_wls[1,2], 4), "]\n\n")
+
 # Calcul de la probabilité estimée depuis le modèle WLS
 p_wls <- coef(wls_model)[1]
 cat("Estimated same-side probability using WLS:", round(p_wls, 4), "\n")
@@ -549,6 +467,8 @@ cat("Estimated same-side probability using WLS:", round(p_wls, 4), "\n")
 glm_model_wls <- glm(prop ~ 1, family = gaussian, weights = m, data = df)
 summary(glm_model_wls)
 ```
+
+### 2.3. Fixed effect GLM
 
 ```{r}
 #| label: "GLM Binomial"
@@ -620,5 +540,8 @@ ggplot(df_resid_best, aes(x = fitted, y = pearson_res)) +
 # Calcul du facteur de dispersion
 dispersion_ratio <- summary(best_model)$deviance / summary(best_model)$df.residual
 cat("Dispersion Ratio:", dispersion_ratio, "\n")
+
+quasi_glm <- glm(cbind(y, m - y) ~ person, family = quasibinomial, data = df)
+summary(quasi_glm)
 
 ```
