@@ -337,17 +337,29 @@ p_residuals <- ggplot(df_resid, aes(x = fitted, y = pearson_res)) +
   geom_point(color = "steelblue", alpha = 0.7) +
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
   labs(
-    title = "Résidus vs Valeurs Prévues",
-    x = "Valeurs Prévues",
-    y = "Résidus Pearson"
+    title = "Residuals VS Fitted values",
+    x = "Fitted values",
+    y = "Pearson residuals"
   ) +
   theme_bw() +
   theme(
     plot.title = element_text(hjust = 0.5),
-    plot.caption = element_text(hjust = 0.5)
+    legend.title = element_text(hjust = 0.5),
+    legend.text = element_text(hjust = 0.5),
+    strip.background = element_rect(fill = "grey90"),
+    strip.text = element_text(face = "bold")
   )
 
 print(p_residuals)
+
+ggsave(
+  filename = "p_residuals_baseline.pdf",  
+  plot = p_residuals,  
+  device = "pdf", 
+  path = path, 
+  width = 8,
+  height = 5
+)
 
 
 df_resid$pearson_res <- residuals(base_glm, type = "pearson")
@@ -363,7 +375,6 @@ p_qq <- ggplot(df_resid, aes(sample = pearson_res)) +
   theme_bw() +
   theme(
     plot.title = element_text(hjust = 0.5),
-    plot.caption = element_text(hjust = 0.5)
   )
 
 print(p_qq)
@@ -553,12 +564,30 @@ fitted_best <- fitted(best_model)
 df_resid_best <- data.frame(fitted = fitted_best, pearson_res = residuals_best)
 
 # Plot des résidus vs valeurs prédites
-ggplot(df_resid_best, aes(x = fitted, y = pearson_res)) +
+p_residuals_fixed_effect <- ggplot(df_resid_best, aes(x = fitted, y = pearson_res)) +
   geom_point(color = "steelblue", alpha = 0.7) +
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
-  labs(title = "Résidus vs Valeurs Prévues (Modèle Optimal)",
-       x = "Valeurs Prévues", y = "Résidus Pearson") +
-  theme_bw()
+  labs(title = "Residuals VS Fitted values",
+       x = "Fitted values", y = "Pearson residuals") +
+  theme_bw() +
+    theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.title = element_text(hjust = 0.5),
+    legend.text = element_text(hjust = 0.5),
+    strip.background = element_rect(fill = "grey90"),
+    strip.text = element_text(face = "bold")
+  )
+
+print(p_residuals_fixed_effect)
+
+ggsave(
+  filename = "p_residuals_fixed_effect.pdf",  
+  plot = p_residuals_fixed_effect,  
+  device = "pdf", 
+  path = path, 
+  width = 8,
+  height = 5
+)
 
 # Calcul du facteur de dispersion
 dispersion_ratio <- summary(best_model)$deviance / summary(best_model)$df.residual
@@ -589,6 +618,14 @@ summary(random_effect_person)
 
 dispersion_ratio <- summary(random_effect_person)$deviance / summary(random_effect_person)$df.residual
 cat("Dispersion Ratio:", dispersion_ratio, "\n")
+
+random_effect_person_nout <- glmer(
+  cbind(y, m - y) ~ 1 + (1 | person),
+  family = binomial,
+  data = df_cleaned
+)
+
+
 ```
 
 ### 2.5. Nested Effect GLM
@@ -607,11 +644,25 @@ re_model_nested <- glmer(
 )
 
 summary(re_model_nested)
-AIC(re_model_nested)
 
 anova(random_effect_person, re_model_nested, test="LRT")
 AIC(random_effect_person, re_model_nested)
 
 dispersion_ratio <- summary(re_model_nested)$deviance / summary(re_model_nested)$df.residual
 cat("Dispersion Ratio:", dispersion_ratio, "\n")
+
+
+re_model_nested_nout <- glmer(
+  cbind(y, m - y) ~ 1 + (1 | person) + (1 | person : coin),
+  family = binomial,
+  data = df_cleaned
+)
+summary(re_model_nested_nout)
+
+AIC(re_model_nested_nout)
+
+anova(random_effect_person_nout, re_model_nested_nout, test="LRT")
+
+
+
 ```
