@@ -50,6 +50,7 @@ library(ggplot2)
 library(dplyr)
 library(stringr)
 library(SMPracticals)
+library(lme4)
 set.seed(12345)
 path = "/Users/kalilbouhadra/MS_Statistics/MS1/Regression_Methods/Project/Regression_Project"
 
@@ -566,4 +567,51 @@ cat("Dispersion Ratio:", dispersion_ratio, "\n")
 quasi_glm <- glm(cbind(y, m - y) ~ person, family = quasibinomial, data = df)
 summary(quasi_glm)
 
+```
+
+### 2.4. Random Effect GLM
+
+```{r}
+#| label: "Random Effect GLM"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+
+random_effect_person <- glmer(
+  cbind(y, m - y) ~ 1 + (1|person), 
+  family = binomial, 
+  data = df
+)
+
+summary(random_effect_person)
+
+dispersion_ratio <- summary(random_effect_person)$deviance / summary(random_effect_person)$df.residual
+cat("Dispersion Ratio:", dispersion_ratio, "\n")
+```
+
+### 2.5. Nested Effect GLM
+
+```{r}
+#| label: "Nested Effect GLM"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+re_model_nested <- glmer(
+  cbind(y, m - y) ~ 1 + (1|person) + (1|person:coin),
+  family = binomial,
+  data = df
+)
+
+summary(re_model_nested)
+AIC(re_model_nested)
+
+anova(random_effect_person, re_model_nested, test="LRT")
+AIC(random_effect_person, re_model_nested)
+
+dispersion_ratio <- summary(re_model_nested)$deviance / summary(re_model_nested)$df.residual
+cat("Dispersion Ratio:", dispersion_ratio, "\n")
 ```
