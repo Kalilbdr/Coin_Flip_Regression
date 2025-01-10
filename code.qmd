@@ -252,6 +252,14 @@ ggsave(
 #| warning: false
 #| error: false
 
+df_time <- read.csv("df-time-agg.csv", header = TRUE)
+df_time <- df_time[, c("same_side", "agg")]
+
+# Calcul de la moyenne des success proportions pour chaque "agg"
+df_time <- df_time %>%
+  group_by(agg) %>%
+  summarize(mean_same_side = mean(same_side, na.rm = TRUE)) %>%
+  ungroup()
 
 # Transformer les résultats de l'ACF en DataFrame
 acf_result <- acf(df_time$mean_same_side, plot = FALSE)
@@ -369,9 +377,9 @@ p_qq <- ggplot(df_resid, aes(sample = pearson_res)) +
   stat_qq(color = "steelblue", alpha = 0.7) +
   stat_qq_line(color = "red", linetype = "dashed") +
   labs(
-    title = "Q-Q Plot des Résidus Pearson",
-    x = "Quantiles théoriques",
-    y = "Quantiles des résidus"
+    title = "Q-Q Plot of the Pearson residuals",
+    x = "Residual quantiles",
+    y = "Theoretical quantiles"
   ) +
   theme_bw() +
   theme(
@@ -746,7 +754,6 @@ ggsave(
   width = 8,
   height = 5
 )
-
 ```
 
 ### 2.7. Previous flip impact
