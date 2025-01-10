@@ -51,6 +51,7 @@ library(dplyr)
 library(stringr)
 library(SMPracticals)
 library(lme4)
+library(mgcv)
 set.seed(12345)
 path = "/Users/kalilbouhadra/MS_Statistics/MS1/Regression_Methods/Project/Regression_Project"
 
@@ -665,4 +666,92 @@ anova(random_effect_person_nout, re_model_nested_nout, test="LRT")
 
 
 
+```
+
+### 2.6. Learning Effect - Time
+
+```{r}
+#| label: "Learning Effect"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+
+df_time_agg <- read.csv("df-time-agg.csv", header=T, stringsAsFactors = FALSE)
+
+linear_learning <- glm(
+  cbind(same_side, N - same_side) ~ mean_toss,
+  family = binomial,
+  data   = df_time_agg
+)
+
+summary(linear_learning)
+
+
+spline_learning <- gam(
+  cbind(same_side, N - same_side) ~ s(mean_toss),
+  family = binomial,
+  data   = df_time_agg
+)
+
+summary(spline_learning)
+
+plot(spline_learning, shade=TRUE, se=TRUE)
+
+AIC(linear_learning, spline_learning)
+```
+
+```{r}
+#| label: "Previous flip impact"
+#| echo: false
+#| message: false 
+#| warning: false
+#| error: false
+
+df_time <- read.csv("df-time.csv", header=T, stringsAsFactors = FALSE)
+
+# 2) Check structure
+head(df_time)
+str(df_time)
+
+
+df_time2 <- df_time %>%
+  group_by(person_dataset_sequence) %>%
+  arrange(toss_number, .by_group = TRUE) %>%
+  mutate(
+    # get the "initial_side" from the row where toss_number == 1 in that group
+    # we can use first(toss_start) for each group:
+    initial_side = first(toss_start),  # same for the entire run
+    
+    # define same_side comparing toss_end to initial_side
+    same_side = if_else(toss_end == first(toss_start), 1L, 0L),
+    
+    # to define the previous flip outcome for row i, we "lag" the current 'toss_end'
+    prev_flip = lag(toss_end, 1),
+    
+    # if the group changes (i.e. toss_number starts over), we'll get an NA from lag
+    # for the 1st toss in each run, so let's fix that:
+    prev_flip = if_else(is.na(prev_flip), "none", prev_flip),
+    
+    # define a numeric for whether the previous flip ended on heads
+    prev_flip_heads = if_else(prev_flip == "h", 1L, 0L)
+  ) %>%
+  ungroup()
+
+# 4) We only keep the rows beyond the first toss in each run if we want a valid "previous toss"
+#    Because for toss_number == 1, prev_flip is "none".
+df_time2 <- df_time2 %>%
+  filter(prev_flip != "none")
+
+head(df_time2, 30)
+
+
+model_recent <- glm(
+  same_side ~ prev_flip_heads,
+  family = binomial(link = "logit"),
+  data = df_time2
+)
+
+summary(model_recent)
 ```
