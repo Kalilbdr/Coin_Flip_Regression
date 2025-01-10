@@ -697,10 +697,59 @@ spline_learning <- gam(
 
 summary(spline_learning)
 
-plot(spline_learning, shade=TRUE, se=TRUE)
-
 AIC(linear_learning, spline_learning)
+
+
+# Create a sequence of mean_toss values spanning the observed range
+new_data <- data.frame(mean_toss = seq(min(df_time_agg$mean_toss), 
+                                       max(df_time_agg$mean_toss), 
+                                       length.out = 200))
+
+# Obtain predictions on the link (logit) scale along with standard errors
+pred <- predict(spline_learning, newdata = new_data, type = "link", se.fit = TRUE)
+
+# Inverse link function for binomial logit
+linkinv <- spline_learning$family$linkinv
+
+# Transform predictions to the response scale (probabilities)
+new_data$fit <- linkinv(pred$fit)
+
+# Compute approximate 95% confidence intervals on the response scale
+new_data$lwr <- linkinv(pred$fit - 2 * pred$se.fit)
+new_data$upr <- linkinv(pred$fit + 2 * pred$se.fit)
+
+# Plot the estimated smooth function with confidence ribbon using ggplot2
+library(ggplot2)
+
+p_spline <- ggplot(new_data, aes(x = mean_toss, y = fit)) +
+  geom_line(color = "steelblue", size = 1) +                          # Estimated probability line
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "steelblue", alpha = 0.2) +  # Confidence interval
+  labs(
+    title = "Estimated Learning Effect over Time",
+    x = "Mean Toss",
+    y = "Estimated Same-Side Probability"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.title = element_text(face = "bold")
+  )
+
+print(p_spline)
+
+# Save the plot as a PDF
+ggsave(
+  filename = "learning_spline_plot.pdf",  
+  plot = p_spline,  
+  device = "pdf", 
+  path = path,
+  width = 8,
+  height = 5
+)
+
 ```
+
+### 2.7. Previous flip impact
 
 ```{r}
 #| label: "Previous flip impact"
@@ -709,49 +758,31 @@ AIC(linear_learning, spline_learning)
 #| warning: false
 #| error: false
 
-df_time <- read.csv("df-time.csv", header=T, stringsAsFactors = FALSE)
 
-# 2) Check structure
-head(df_time)
-str(df_time)
+# Charger les données agrégées
+df_time_agg <- read.csv("df-time-agg.csv", header = TRUE, stringsAsFactors = FALSE)
 
+# Trier par personne, pièce et ordre de bloc pour assurer un bon alignement temporel
+df_time_agg <- df_time_agg %>%
+  arrange(person, coin, agg)
 
-df_time2 <- df_time %>%
-  group_by(person_dataset_sequence) %>%
-  arrange(toss_number, .by_group = TRUE) %>%
-  mutate(
-    # get the "initial_side" from the row where toss_number == 1 in that group
-    # we can use first(toss_start) for each group:
-    initial_side = first(toss_start),  # same for the entire run
-    
-    # define same_side comparing toss_end to initial_side
-    same_side = if_else(toss_end == first(toss_start), 1L, 0L),
-    
-    # to define the previous flip outcome for row i, we "lag" the current 'toss_end'
-    prev_flip = lag(toss_end, 1),
-    
-    # if the group changes (i.e. toss_number starts over), we'll get an NA from lag
-    # for the 1st toss in each run, so let's fix that:
-    prev_flip = if_else(is.na(prev_flip), "none", prev_flip),
-    
-    # define a numeric for whether the previous flip ended on heads
-    prev_flip_heads = if_else(prev_flip == "h", 1L, 0L)
-  ) %>%
+# Créer une variable avec la proportion de same_side du bloc précédent pour chaque observation
+df_time_agg <- df_time_agg %>%
+  group_by(person, coin) %>%
+  mutate(prev_prop_same_side = lag(same_side / N)) %>%
   ungroup()
 
-# 4) We only keep the rows beyond the first toss in each run if we want a valid "previous toss"
-#    Because for toss_number == 1, prev_flip is "none".
-df_time2 <- df_time2 %>%
-  filter(prev_flip != "none")
+# Filtrer les premières lignes de chaque groupe où prev_prop_same_side est NA
+df_time_agg_filtered <- df_time_agg %>% filter(!is.na(prev_prop_same_side))
 
-head(df_time2, 30)
-
-
-model_recent <- glm(
-  same_side ~ prev_flip_heads,
-  family = binomial(link = "logit"),
-  data = df_time2
+# Ajuster le modèle logistique avec l'effet du bloc précédent
+model_recent_block <- glm(
+  cbind(same_side, N - same_side) ~ prev_prop_same_side,
+  family = binomial,
+  data = df_time_agg_filtered
 )
 
-summary(model_recent)
+summary(model_recent_block)
+
+
 ```
