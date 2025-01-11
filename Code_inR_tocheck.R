@@ -150,7 +150,6 @@ print(coin_summary)
 
 
 ### (c) Summary of total flips and success by person-coin
-
 person_coin_summary <- df %>%
   group_by(person, coin) %>%
   summarize(
@@ -274,7 +273,6 @@ ggsave(
 base_glm <- glm(cbind(y, m - y) ~ 1, family = binomial, data = df)
 
 # Summary of the model to observe the results 
-
 summary(base_glm)
 
 (ci_logit_base <- confint(base_glm, level = 0.95))
@@ -357,7 +355,7 @@ ggsave(
 )
 
 
-# Compute the quantiles and IQR (Inter Quartil Range)
+# Compute the quantiles and IQR (Inter Quartile Range)
 Q1 <- quantile(person_coin_summary$mean_success, 0.25)
 Q3 <- quantile(person_coin_summary$mean_success, 0.75)
 IQR_value <- Q3 - Q1
@@ -392,7 +390,7 @@ n <- nrow(df)
 print(threshold <- 8/(n - 2*1))
 
 
-# # Identify and remove the observations with a Cook's distance > threshold
+# Identify and remove the observations with a Cook's distance > threshold
 influential_indices <- which(cooks_d > threshold)
 df_cleaned <- df[-influential_indices, ]
 
@@ -420,14 +418,12 @@ cat("Estimated same-side probability (model without influential points):", round
 
 # Normal linear model base
 
-
 df$prop <- df$y / df$m
 
 # Fit a weighted least squares (WLS) model
 wls_model <- lm(prop ~ 1, data = df, weights = df$m)
 
 # Parameter extraction
-
 beta0_hat <- coef(wls_model)[1]              
 var_beta0_hat <- vcov(wls_model)[1, 1]       
 se_beta0_hat <- sqrt(var_beta0_hat)          
@@ -479,7 +475,6 @@ formulas <- list(
 )
 
 
-# 
 model_list <- list()
 aic_values <- numeric(length(formulas))
 
@@ -545,6 +540,8 @@ ggsave(
 dispersion_ratio <- summary(best_model)$deviance / summary(best_model)$df.residual
 cat("Dispersion Ratio:", dispersion_ratio, "\n")
 
+
+# Quasi binomial model (if wanted)
 quasi_glm <- glm(cbind(y, m - y) ~ person, family = quasibinomial, data = df)
 summary(quasi_glm)
 
@@ -565,6 +562,8 @@ summary(random_effect_person)
 dispersion_ratio <- summary(random_effect_person)$deviance / summary(random_effect_person)$df.residual
 cat("Dispersion Ratio:", dispersion_ratio, "\n")
 
+
+# Refit without outliers
 random_effect_person_nout <- glmer(
   cbind(y, m - y) ~ 1 + (1 | person),
   family = binomial,
@@ -593,7 +592,7 @@ AIC(random_effect_person, re_model_nested)
 dispersion_ratio <- summary(re_model_nested)$deviance / summary(re_model_nested)$df.residual
 cat("Dispersion Ratio:", dispersion_ratio, "\n")
 
-
+# Check impact of outliers on the previous result (AIC+ ANOVA) --> coin-factor not significant without outliers
 re_model_nested_nout <- glmer(
   cbind(y, m - y) ~ 1 + (1 | person) + (1 | person : coin),
   family = binomial,
@@ -617,9 +616,9 @@ anova(random_effect_person_nout, re_model_nested_nout, test="LRT")
 # --------------------------------------------------------
 
 
-
 df_time_agg <- read.csv("df-time-agg.csv", header=T, stringsAsFactors = FALSE)
 
+# Linear model
 linear_learning <- glm(
   cbind(same_side, N - same_side) ~ mean_toss,
   family = binomial,
@@ -628,7 +627,7 @@ linear_learning <- glm(
 
 summary(linear_learning)
 
-
+# Spline model
 spline_learning <- gam(
   cbind(same_side, N - same_side) ~ s(mean_toss),
   family = binomial,
@@ -639,31 +638,22 @@ summary(spline_learning)
 
 AIC(linear_learning, spline_learning)
 
-
-# Create a sequence of mean_toss values spanning the observed range
+# Plot of spline with CI 95%
 new_data <- data.frame(mean_toss = seq(min(df_time_agg$mean_toss), 
                                        max(df_time_agg$mean_toss), 
                                        length.out = 200))
 
-# Obtain predictions on the link (logit) scale along with standard errors
 pred <- predict(spline_learning, newdata = new_data, type = "link", se.fit = TRUE)
-
-# Inverse link function for binomial logit
 linkinv <- spline_learning$family$linkinv
 
-# Transform predictions to the response scale (probabilities)
 new_data$fit <- linkinv(pred$fit)
-
-# Compute approximate 95% confidence intervals on the response scale
 new_data$lwr <- linkinv(pred$fit - 2 * pred$se.fit)
 new_data$upr <- linkinv(pred$fit + 2 * pred$se.fit)
 
-# Plot the estimated smooth function with confidence ribbon using ggplot2
-library(ggplot2)
 
 p_spline <- ggplot(new_data, aes(x = mean_toss, y = fit)) +
-  geom_line(color = "steelblue", size = 1) +                          # Estimated probability line
-  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "steelblue", alpha = 0.2) +  # Confidence interval
+  geom_line(color = "steelblue", size = 1) +                        
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "steelblue", alpha = 0.2) + 
   labs(
     title = "Estimated Learning Effect over Time",
     x = "Mean Toss",
@@ -694,24 +684,19 @@ ggsave(
 # --------------------------------------------------------
 
 
-
-# Load the aggregated data
+# Treat the data
 df_time_agg <- read.csv("df-time-agg.csv", header = TRUE, stringsAsFactors = FALSE)
-
-# Sort by person, coin and aggregation in order to ensure proper temporal alignment
 df_time_agg <- df_time_agg %>%
   arrange(person, coin, agg)
 
-# Create a variable of the same side proportion for each aggregation
 df_time_agg <- df_time_agg %>%
   group_by(person, coin) %>%
   mutate(prev_prop_same_side = lag(same_side / N)) %>%
   ungroup()
 
-# Filter the NA values
 df_time_agg_filtered <- df_time_agg %>% filter(!is.na(prev_prop_same_side))
 
-# Fit the logistic model taking into account the effect of the previous aggregated values
+# Fit the model
 model_recent_block <- glm(
   cbind(same_side, N - same_side) ~ prev_prop_same_side,
   family = binomial,
