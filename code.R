@@ -68,14 +68,16 @@ p_general <- ggplot(df, aes(x = success)) +
   labs(
     title = "Distribution of same-side proportions",
     x = "Same-side proportion",
-    y = "Count",
+    y = "Count"
   ) +
   theme_bw() + 
   theme(
-    plot.title = element_text(hjust = 0.5),   
-    plot.caption = element_text(hjust = 0.5),      
-    legend.title = element_text(hjust = 0.5),   
-    legend.text = element_text(hjust = 0.5)     
+    plot.title   = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title   = element_text(face = "bold", size = 12),
+    axis.text    = element_text(size = 10, color = "black"), 
+    plot.caption = element_text(hjust = 0.5),
+    legend.title = element_text(hjust = 0.5),
+    legend.text  = element_text(hjust = 0.5)
   )
 
 # Compute statistics
@@ -180,16 +182,18 @@ p_violin <- ggplot(violin_data, aes(x = "", y = mean_success)) +
   labs(
     title = "Distribution of Success Proportions",
     x = "",
-    y = "Success Proportion",
+    y = "Success Proportion"
   ) +
   theme_bw() + 
   theme(
-    plot.title = element_text(hjust = 0.5),   
-    plot.caption = element_text(hjust = 0.5),
-    legend.title = element_text(hjust = 0.5),   
-    legend.text = element_text(hjust = 0.5),
+    plot.title      = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title      = element_text(face = "bold", size = 12),
+    axis.text       = element_text(size = 10, color = "black"),
+    plot.caption    = element_text(hjust = 0.5),
+    legend.title    = element_text(hjust = 0.5),
+    legend.text     = element_text(hjust = 0.5),
     strip.background = element_rect(fill = "grey90"),
-    strip.text = element_text(face = "bold")
+    strip.text      = element_text(face = "bold")
   )
 
 print(p_violin)
@@ -229,7 +233,8 @@ acf_df <- data.frame(
 p_acf <- ggplot(acf_df, aes(x = lag, y = acf)) +
   geom_bar(stat = "identity", fill = "steelblue", color = "white", alpha = 0.8) +  
   geom_hline(yintercept = 0, color = "black") +  
-  geom_hline(yintercept = c(-1.96 / sqrt(nrow(df_time)), 1.96 / sqrt(nrow(df_time))), linetype = "dashed", color = "red") +  
+  geom_hline(yintercept = c(-1.96 / sqrt(nrow(df_time)), 1.96 / sqrt(nrow(df_time))), 
+             linetype = "dashed", color = "red") +  
   labs(
     title = "Autocorrelation Function (ACF) of the success proportion",
     x = "Lag",
@@ -237,11 +242,13 @@ p_acf <- ggplot(acf_df, aes(x = lag, y = acf)) +
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(hjust = 0.5),
-    legend.title = element_text(hjust = 0.5),
-    legend.text = element_text(hjust = 0.5),
+    plot.title      = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title      = element_text(face = "bold", size = 12),
+    axis.text       = element_text(size = 10, color = "black"),
+    legend.title    = element_text(hjust = 0.5),
+    legend.text     = element_text(hjust = 0.5),
     strip.background = element_rect(fill = "grey90"),
-    strip.text = element_text(face = "bold")
+    strip.text      = element_text(face = "bold")
   )
 
 
@@ -310,10 +317,12 @@ p_residuals <- ggplot(df_resid, aes(x = fitted, y = pearson_res)) +
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(hjust = 0.5), 
-    legend.title = element_text(hjust = 0.5), 
-    legend.text = element_text(hjust = 0.5),
-    strip.background = element_rect(fill = "grey90"),
+    plot.title      = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title      = element_text(face = "bold", size = 12),
+    axis.text       = element_text(size = 10, color = "black"),
+    legend.title    = element_text(hjust = 0.5),
+    legend.text     = element_text(hjust = 0.5),
+    strip.background = element_rect(fill = "grey90")
   )
 
 print(p_residuals)
@@ -340,7 +349,9 @@ p_qq <- ggplot(df_resid, aes(sample = pearson_res)) +
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(hjust = 0.5),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title = element_text(face = "bold", size = 12),
+    axis.text  = element_text(size = 10, color = "black")
   )
 
 print(p_qq)
@@ -515,14 +526,19 @@ df_resid_best <- data.frame(fitted = fitted_best, pearson_res = residuals_best)
 p_residuals_fixed_effect <- ggplot(df_resid_best, aes(x = fitted, y = pearson_res)) +
   geom_point(color = "steelblue", alpha = 0.7) +
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
-  labs(title = "Residuals VS Fitted values",
-       x = "Fitted values", y = "Pearson residuals") +
+  labs(
+    title = "Residuals VS Fitted values",
+    x = "Fitted values",
+    y = "Pearson residuals"
+  ) +
   theme_bw() +
-    theme(
-      plot.title = element_text(hjust = 0.5),
-      legend.title = element_text(hjust = 0.5), 
-      legend.text = element_text(hjust = 0.5),  
-      strip.background = element_rect(fill = "grey90"),
+  theme(
+    plot.title      = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title      = element_text(face = "bold", size = 12),
+    axis.text       = element_text(size = 10, color = "black"),
+    legend.title    = element_text(hjust = 0.5),
+    legend.text     = element_text(hjust = 0.5),
+    strip.background = element_rect(fill = "grey90")
   )
 
 print(p_residuals_fixed_effect)
@@ -661,8 +677,9 @@ p_spline <- ggplot(new_data, aes(x = mean_toss, y = fit)) +
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(hjust = 0.5),
-    axis.title = element_text(face = "bold")
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title = element_text(face = "bold", size = 12),
+    axis.text  = element_text(size = 10, color = "black")
   )
 
 print(p_spline)
