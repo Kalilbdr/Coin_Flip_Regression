@@ -14,7 +14,7 @@ library(lme4)
 library(mgcv)
 set.seed(12345)
 
-#If this packages are not installed; you can install them using : install package
+#If these packages are not installed; you can install them using : install.packages("package_name")
 
 # Set your working directory with the command setwd("Working_Directory")
 # Set your path if necessary; using path = ""
@@ -228,9 +228,9 @@ acf_df <- data.frame(
 
 # Create ACF plot
 p_acf <- ggplot(acf_df, aes(x = lag, y = acf)) +
-  geom_bar(stat = "identity", fill = "steelblue", color = "white", alpha = 0.8) +  # Barres d'autocorrélation
-  geom_hline(yintercept = 0, color = "black") +  # Ligne de référence à 0
-  geom_hline(yintercept = c(-1.96 / sqrt(nrow(df_time)), 1.96 / sqrt(nrow(df_time))), linetype = "dashed", color = "red") +  # Bornes de significativité
+  geom_bar(stat = "identity", fill = "steelblue", color = "white", alpha = 0.8) +  
+  geom_hline(yintercept = 0, color = "black") +  
+  geom_hline(yintercept = c(-1.96 / sqrt(nrow(df_time)), 1.96 / sqrt(nrow(df_time))), linetype = "dashed", color = "red") +  
   labs(
     title = "Autocorrelation Function (ACF) of the success proportion",
     x = "Lag",
@@ -312,11 +312,10 @@ p_residuals <- ggplot(df_resid, aes(x = fitted, y = pearson_res)) +
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(hjust = 0.5),
-    legend.title = element_text(hjust = 0.5),
+    plot.title = element_text(hjust = 0.5), 
+    legend.title = element_text(hjust = 0.5), 
     legend.text = element_text(hjust = 0.5),
     strip.background = element_rect(fill = "grey90"),
-    strip.text = element_text(face = "bold")
   )
 
 print(p_residuals)
@@ -337,9 +336,9 @@ p_qq <- ggplot(df_resid, aes(sample = pearson_res)) +
   stat_qq(color = "steelblue", alpha = 0.7) +
   stat_qq_line(color = "red", linetype = "dashed") +
   labs(
-    title = "Q-Q Plot des Résidus Pearson",
-    x = "Quantiles théoriques",
-    y = "Quantiles des résidus"
+    title = "Q-Q Plot of Pearson Residuals",
+    x = "Theoretical Residuals",
+    y = "Residuals Quantiles"
   ) +
   theme_bw() +
   theme(
@@ -429,9 +428,9 @@ wls_model <- lm(prop ~ 1, data = df, weights = df$m)
 
 # Parameter extraction
 
-beta0_hat <- coef(wls_model)[1]              # Estimateur de l'intercept
-var_beta0_hat <- vcov(wls_model)[1, 1]       # Variance de l'intercept
-se_beta0_hat <- sqrt(var_beta0_hat)          # Erreur standard
+beta0_hat <- coef(wls_model)[1]              
+var_beta0_hat <- vcov(wls_model)[1, 1]       
+se_beta0_hat <- sqrt(var_beta0_hat)          
 
 
 # H0 Test : beta0 = 0.5
@@ -452,7 +451,7 @@ cat("p-value (bilateral) =", format.pval(p_value, digits=4), "\n\n")
 
 
 alpha <- 0.05
-t_crit <- qt(1 - alpha/2, df_res)  # quantile t pour df_res
+t_crit <- qt(1 - alpha/2, df_res)  
 
 delta <- t_crit * se_beta0_hat
 center <- beta0_hat
@@ -505,7 +504,7 @@ best_model_index <- which.min(aic_values)
 best_model_name <- model_comparison$Model[1]
 best_model <- model_list[[best_model_index]]
 
-cat("Meilleur modèle selon l'AIC :", best_model_name, "\n")
+cat("Best Model based on AIC :", best_model_name, "\n")
 summary(best_model)
 
 best_model <- glm(cbind(y, m - y) ~ person, family = binomial, data = df)
@@ -525,11 +524,10 @@ p_residuals_fixed_effect <- ggplot(df_resid_best, aes(x = fitted, y = pearson_re
        x = "Fitted values", y = "Pearson residuals") +
   theme_bw() +
     theme(
-    plot.title = element_text(hjust = 0.5),
-    legend.title = element_text(hjust = 0.5),
-    legend.text = element_text(hjust = 0.5),
-    strip.background = element_rect(fill = "grey90"),
-    strip.text = element_text(face = "bold")
+      plot.title = element_text(hjust = 0.5),
+      legend.title = element_text(hjust = 0.5), 
+      legend.text = element_text(hjust = 0.5),  
+      strip.background = element_rect(fill = "grey90"),
   )
 
 print(p_residuals_fixed_effect)
@@ -697,23 +695,23 @@ ggsave(
 
 
 
-# Charger les données agrégées
+# Load the aggregated data
 df_time_agg <- read.csv("df-time-agg.csv", header = TRUE, stringsAsFactors = FALSE)
 
-# Trier par personne, pièce et ordre de bloc pour assurer un bon alignement temporel
+# Sort by person, coin and aggregation in order to ensure proper temporal alignment
 df_time_agg <- df_time_agg %>%
   arrange(person, coin, agg)
 
-# Créer une variable avec la proportion de same_side du bloc précédent pour chaque observation
+# Create a variable of the same side proportion for each aggregation
 df_time_agg <- df_time_agg %>%
   group_by(person, coin) %>%
   mutate(prev_prop_same_side = lag(same_side / N)) %>%
   ungroup()
 
-# Filtrer les premières lignes de chaque groupe où prev_prop_same_side est NA
+# Filter the NA values
 df_time_agg_filtered <- df_time_agg %>% filter(!is.na(prev_prop_same_side))
 
-# Ajuster le modèle logistique avec l'effet du bloc précédent
+# Fit the logistic model taking into account the effect of the previous aggregated values
 model_recent_block <- glm(
   cbind(same_side, N - same_side) ~ prev_prop_same_side,
   family = binomial,
