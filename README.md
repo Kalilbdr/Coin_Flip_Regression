@@ -10,7 +10,7 @@ The files in this folder are:
 
 4) Project_Regression_2024.pdf : The project description
 
-5) data-agg.csv :
+5) data-agg.csv : File containing aggregated coin-flips 
 
 6) df-time-agg.csv : A file containing the aggregated time values
 
@@ -33,9 +33,7 @@ install.packages("SMPracticals")
 install.packages("lme4")
 install.packages("mgcv")
 
-
 Project Data
-
 
 Results
 
