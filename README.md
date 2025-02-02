@@ -20,12 +20,6 @@ We leverage **GLM binomial models**, **fixed/random effects**, and **penalized s
 | `df-time-agg.csv` | Aggregated time-based results |
 | `figures/` | Generated plots |
 
-## Installation & Dependencies
-
-### **Prerequisites**
-- **R 4.x+**
-- **RStudio (optional)**  
-
 ### **Install Required Packages**
 ```r
 install.packages(c("ggplot2", "dplyr", "stringr", "SMPracticals", "lme4", "mgcv"))
