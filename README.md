@@ -1,14 +1,14 @@
-# 🎯 Coin-Flip Experiment: A Regression Analysis  
+# Coin-Flip Experiment: A Regression Analysis  
 *MATH 408 - Regression Methods, EPFL (2024/25)*  
 **Authors:** Kalil Bouhadra, Gabriel Marival  
 
-## 📌 Project Overview
+## Project Overview
 This project analyzes coin-flip outcomes using **regression models** to detect potential biases.  
 We leverage **GLM binomial models**, **fixed/random effects**, and **penalized splines** to assess statistical properties.  
 
 **Data:** Extracted from **Bartoš et al. (2023)**, consisting of **350,757 flips** aggregated by participant and coin.
 
-## 📂 Repository Structure
+## Repository Structure
 
 | File | Description |
 |------|------------|
@@ -22,7 +22,7 @@ We leverage **GLM binomial models**, **fixed/random effects**, and **penalized s
 
 **Note:** Figures are generated during script execution.
 
-## 🔧 Installation & Dependencies
+## Installation & Dependencies
 
 ### **1️⃣ Prerequisites**
 - **R 4.x+**
