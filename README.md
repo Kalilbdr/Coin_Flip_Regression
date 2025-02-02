@@ -27,7 +27,6 @@ We leverage **GLM binomial models**, **fixed/random effects**, and **penalized s
 - **RStudio (optional)**  
 
 ### **Install Required Packages**
-Run the following in R:  
 ```r
 install.packages(c("ggplot2", "dplyr", "stringr", "SMPracticals", "lme4", "mgcv"))
 
