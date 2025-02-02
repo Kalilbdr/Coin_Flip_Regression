@@ -13,14 +13,12 @@ We leverage **GLM binomial models**, **fixed/random effects**, and **penalized s
 | File | Description |
 |------|------------|
 | `README.md` | Project documentation |
-| `Bouhadra-Marival-RMProject-2025.pdf` | Final report |
-| `Project_Regression_2024.pdf` | Original paper from Bartoš et al. (2023) |
-| `code.R` | R script for regression analysis |
+| `Report.pdf` | Final report |
+| `Project_Description.pdf` | Project Description |
+| `code.R` | R script |
 | `data-agg.csv` | Aggregated coin-flip results |
 | `df-time-agg.csv` | Aggregated time-based results |
 | `figures/` | Generated plots |
-
-**Note:** Figures are generated during script execution.
 
 ## Installation & Dependencies
 
